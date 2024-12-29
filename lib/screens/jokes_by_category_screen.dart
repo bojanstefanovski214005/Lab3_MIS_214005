@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:lab_2/provider/favorite_provider.dart';
 import '../models/joke.dart';
 import '../services/api_services.dart';
 
 class JokesByCategoryScreen extends StatefulWidget {
   final String type;
 
-  const JokesByCategoryScreen({super.key, required this.type});
+  const JokesByCategoryScreen({Key? key, required this.type}) : super(key: key);
 
   @override
   _JokesByCategoryScreenState createState() => _JokesByCategoryScreenState();
@@ -13,23 +14,25 @@ class JokesByCategoryScreen extends StatefulWidget {
 
 class _JokesByCategoryScreenState extends State<JokesByCategoryScreen> {
   late Future<List<Joke>> _jokes;
+  Map<int, bool> _likedJokes = {}; // Store like state for each joke
 
   @override
   void initState() {
     super.initState();
-    _jokes =
-        ApiServices.fetchJokesByType(widget.type); // Fetch jokes based on type
+    _jokes = ApiServices.fetchJokesByType(widget.type)
+        as Future<List<Joke>>; // Fetch jokes based on type
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = FavoriteProvider.of(context);
     return Scaffold(
       appBar: AppBar(
-        leading: const BackButton(color: Colors.white),
-        title: Text('${widget.type} jokes',
+        title: Text('${widget.type} Jokes',
             style: const TextStyle(color: Colors.white)),
         backgroundColor:
             const Color.fromARGB(255, 36, 119, 79), // Matching the theme color
+        // Matching the theme color
       ),
       body: FutureBuilder<List<Joke>>(
         future: _jokes,
@@ -46,11 +49,17 @@ class _JokesByCategoryScreenState extends State<JokesByCategoryScreen> {
               padding: const EdgeInsets.all(16.0),
               itemCount: jokes.length,
               itemBuilder: (context, index) {
+                final joke = jokes[index];
                 return Padding(
                   padding: const EdgeInsets.only(
                       bottom: 16.0), // Space between cards
                   child: Card(
-                    color: const Color.fromARGB(255, 36, 119, 79),
+                    color: const Color.fromARGB(
+                        255, 36, 119, 79), // Matching the theme color
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(12), // Rounded corners
+                    ),
                     elevation: 5, // Shadow effect
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -58,20 +67,34 @@ class _JokesByCategoryScreenState extends State<JokesByCategoryScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            jokes[index].setup,
+                            joke.setup,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            jokes[index].punchline,
+                            joke.punchline,
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 16,
                             ),
+                          ),
+                          const SizedBox(height: 10),
+                          IconButton(
+                            onPressed: () {
+                              provider.toggleFavorite(
+                                  joke.setup + "\n" + joke.punchline);
+                            },
+                            icon: provider
+                                    .isExist(joke.setup + "\n" + joke.punchline)
+                                ? const Icon(Icons.favorite, color: Colors.red)
+                                : const Icon(
+                                    Icons.favorite_border,
+                                    color: Colors.white70,
+                                  ),
                           ),
                         ],
                       ),
